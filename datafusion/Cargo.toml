@@ -1,0 +1,11 @@
+[package]
+name = "datafusion-bench"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+datafusion = {git = "https://github.com/alamb/arrow-datafusion.git", rev="900e15fa642e16b0a1ce7aefaa53238a0884bfcb" }
+tokio = "1.21.2"
+futures = "0.3"

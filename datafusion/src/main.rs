@@ -1,0 +1,42 @@
+use datafusion::config::{
+    OPT_PARQUET_ENABLE_PAGE_INDEX, OPT_PARQUET_PUSHDOWN_FILTERS, OPT_PARQUET_REORDER_FILTERS,
+};
+use datafusion::prelude::{SessionConfig, SessionContext};
+use futures::stream::StreamExt;
+use std::time::Instant;
+
+const QUERIES: &[&str] = &[
+    "select * from logs where service = 'frontend'",
+    "select * from logs where service = 'frontend' and host = 'i-1ec3d9e2506434b2.ec2.internal'",
+    "select * from logs where service = 'frontend' and host = 'i-1ec3d9e2506434b2.ec2.internal' and time > '1970-01-01 00:00:00.008000'::timestamp",
+];
+
+#[tokio::main]
+async fn main() {
+    let path = std::env::var("FILE").unwrap();
+
+    let config = SessionConfig::default()
+        .with_collect_statistics(true)
+        .with_batch_size(1024 * 8)
+        .set_bool(OPT_PARQUET_ENABLE_PAGE_INDEX, true)
+        .set_bool(OPT_PARQUET_PUSHDOWN_FILTERS, true)
+        .set_bool(OPT_PARQUET_REORDER_FILTERS, true);
+
+    let ctx = SessionContext::with_config(config);
+    ctx.register_parquet("logs", &path, Default::default())
+        .await
+        .unwrap();
+
+    for query in QUERIES {
+        let start = Instant::now();
+        let frame = ctx.sql(query).await.unwrap();
+        let mut s = frame.execute_stream().await.unwrap();
+
+        for batch in s.next().await {
+            batch.unwrap();
+        }
+
+        let elapsed = start.elapsed();
+        println!("{} - {}s", query, elapsed.as_secs_f64());
+    }
+}
