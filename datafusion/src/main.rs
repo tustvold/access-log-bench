@@ -2,7 +2,6 @@ use datafusion::config::{
     OPT_PARQUET_ENABLE_PAGE_INDEX, OPT_PARQUET_PUSHDOWN_FILTERS, OPT_PARQUET_REORDER_FILTERS,
 };
 use datafusion::prelude::{SessionConfig, SessionContext};
-use futures::stream::StreamExt;
 use std::time::Instant;
 
 const QUERIES: &[&str] = &[
