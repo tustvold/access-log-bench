@@ -29,12 +29,7 @@ async fn main() {
 
     for query in QUERIES {
         let start = Instant::now();
-        let frame = ctx.sql(query).await.unwrap();
-        let mut s = frame.execute_stream().await.unwrap();
-
-        for batch in s.next().await {
-            batch.unwrap();
-        }
+        ctx.sql(query).await.unwrap().collect().await.unwrap();
 
         let elapsed = start.elapsed();
         println!("{} - {}s", query, elapsed.as_secs_f64());
