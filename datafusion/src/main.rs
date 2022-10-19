@@ -2,6 +2,7 @@ use datafusion::config::{
     OPT_PARQUET_ENABLE_PAGE_INDEX, OPT_PARQUET_PUSHDOWN_FILTERS, OPT_PARQUET_REORDER_FILTERS,
 };
 use datafusion::prelude::{SessionConfig, SessionContext};
+use futures::stream::StreamExt;
 use std::time::Instant;
 
 const QUERIES: &[&str] = &[
@@ -37,7 +38,12 @@ async fn main() {
 
     for query in QUERIES {
         let start = Instant::now();
-        ctx.sql(query).await.unwrap().collect().await.unwrap();
+        let frame = ctx.sql(query).await.unwrap();
+        let mut s = frame.execute_stream().await.unwrap();
+
+        for batch in s.next().await {
+            batch.unwrap();
+        }
 
         let elapsed = start.elapsed();
         println!("{} - {}s", query, elapsed.as_secs_f64());
