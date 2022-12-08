@@ -41,11 +41,12 @@ async fn main() {
         let frame = ctx.sql(query).await.unwrap();
         let mut s = frame.execute_stream().await.unwrap();
 
-        for batch in s.next().await {
-            batch.unwrap();
+        let mut row_count = 0;
+        while let Some(batch) = s.next().await {
+            row_count += batch.unwrap().num_rows()
         }
 
         let elapsed = start.elapsed();
-        println!("{} - {}s", query, elapsed.as_secs_f64());
+        println!("row count {} - {} - {}s", row_count, query, elapsed.as_secs_f64());
     }
 }
